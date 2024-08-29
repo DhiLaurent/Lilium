@@ -10,10 +10,21 @@ https://github.com/upx/upx
 ````
 
 ````
-python -m PyInstaller --onefile lilium.pyw --windowed
+python -m PyInstaller --onefile lilium.pyw --windowed --icon=C:\Users\User\icon.ico
 ````
 
 # Compact exe with upx packer
 ````
-upx.exe --best --lzma --force lilium.exe
+> upx.exe --best --lzma --force lilium.exe
+````
+
+# Set up Server Side
+
+Create certificate
+````
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/C=BR/ST=State/L=City/O=Organization/OU=Unit/CN=example.com/emailAddress=email@example.com"\n
+````
+
+````
+$ python3 server.py
 ````
