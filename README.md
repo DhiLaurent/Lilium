@@ -4,13 +4,15 @@
 
 [!] Save lilium with pyw extension
 
-# Download upx packer
-````
-https://github.com/upx/upx
-````
+# Compile .pyw to exe
 
 ````
 python -m PyInstaller --onefile lilium.pyw --windowed --icon=C:\Users\User\icon.ico
+````
+
+# Download upx packer
+````
+https://github.com/upx/upx
 ````
 
 # Compact exe with upx packer
