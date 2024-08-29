@@ -24,7 +24,7 @@ https://github.com/upx/upx
 
 Create certificate
 ````
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/C=BR/ST=State/L=City/O=Organization/OU=Unit/CN=example.com/emailAddress=email@example.com"\n
+$ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/C=BR/ST=State/L=City/O=Organization/OU=Unit/CN=example.com/emailAddress=email@example.com"\n
 ````
 
 ````
