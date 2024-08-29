@@ -15,5 +15,5 @@ python -m PyInstaller --onefile lilium.pyw --windowed
 
 # Compact exe with upx packer
 ````
-upx --best --lzma --force lilium.exe
+upx.exe --best --lzma --force lilium.exe
 ````
