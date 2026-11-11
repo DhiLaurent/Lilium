@@ -2,6 +2,22 @@
 
 ![](/lilium.jpg?raw=true)
 
+Go Compilation
+
+````
+git clone https://github.com/DhiLaurent/Lilium
+````
+
+````
+cd Lilium/go
+````
+
+````
+make
+````
+
+Python Compilation
+
 [!] Save lilium with pyw extension
 
 # Compile .pyw to exe
