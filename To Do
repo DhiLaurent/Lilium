@@ -7,4 +7,6 @@
 - Tunelamento L3 (?)
 - Keylogger
 - Credential Dump (duplicate lsass process)
+- Multi protocolo (HTTP/HTTPS, DNS)
+- Opção de matar agentes / Agendar matar agentes
 
