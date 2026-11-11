@@ -1,6 +1,6 @@
 # Lilium
 
-![](/lucy.png?raw=true)
+![](/lilium.jpg?raw=true)
 
 [!] Save lilium with pyw extension
 
