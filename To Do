@@ -2,8 +2,9 @@
 
 #Functions
 
-- ps (List process)
-- portfwd create port forwarding
-- keylogger
-- dump (Dump from registry hive)
+- Interface gráfica no server (GUI)
+- portfwd - create port forwarding
+- Tunelamento L3 (?)
+- Keylogger
+- Credential Dump (duplicate lsass process)
 
