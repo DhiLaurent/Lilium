@@ -46,10 +46,10 @@ $ openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -no
 ````
 
 ````
-$ python3 server.py
+$ python3 server.py # python
 ````
 
 ````
-$ ./server
+$ ./server # go
 ````
 
