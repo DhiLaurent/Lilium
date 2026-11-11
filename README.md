@@ -2,11 +2,13 @@
 
 ![](/lilium.jpg?raw=true)
 
-Go Compilation
+# Cloning
 
 ````
 git clone https://github.com/DhiLaurent/Lilium
 ````
+
+# Go Compilation
 
 ````
 cd Lilium/go
@@ -16,27 +18,27 @@ cd Lilium/go
 make
 ````
 
-Python Compilation
+# Python Compilation
 
 [!] Save lilium with pyw extension
 
-# Compile .pyw to exe
+## Compile .pyw to exe
 
 ````
 python -m PyInstaller --onefile lilium.pyw --windowed --icon=C:\Users\User\icon.ico
 ````
 
-# Download upx packer
+## Download upx packer
 ````
 https://github.com/upx/upx
 ````
 
-# Compact exe with upx packer
+## Compact exe with upx packer
 ````
 > upx.exe --best --lzma --force lilium.exe
 ````
 
-# Set up Server Side
+## Set up Server Side
 
 Create certificate
 ````
